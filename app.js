@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV != "production") {
+    require('dotenv').config();
+}
+
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -17,8 +21,6 @@ const userRouter = require('./routes/users')
 const campgrounds = require('./routes/campgrounds')
 const reviews = require('./routes/reviews')
 
-const multer = require('multer');
-const upload = multer({dest: 'uploads/'});
 
 mongoose.connect('mongodb://localhost:27017/yelp-camp', {
     useNewUrlParser: true,
@@ -26,7 +28,7 @@ mongoose.connect('mongodb://localhost:27017/yelp-camp', {
     useUnifiedTopology: true,
     useFindAndModify: false
 });
-
+``
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", ()=>{
