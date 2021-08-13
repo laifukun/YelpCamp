@@ -15,7 +15,7 @@ const session = require('express-session')
 const flash = require('connect-flash')
 const ExpressError = require('./utils/ExpressError')
 
-const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp'
+const dbUrl = process.env.DB_URL || 'mongodb://127.0.0.1:27017/yelp-camp'
 const passport = require('passport');
 const passportLocal = require('passport-local')
 const User = require('./models/user')
@@ -47,17 +47,20 @@ app.use(express.urlencoded({extended: true}))
 app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')))
 
-const secret = process.env.SECRET
+const secret = process.env.SECRET || 'this'
+
+
 const store = new MongoDBStore({
     mongoUrl: dbUrl,
     secret,
     touchAfter: 24*3600,
 });
 
+
 app.use(session({
     secret,
     store: store,
-  }));
+}));
 
 
 store.on("error", function(e){
@@ -114,6 +117,7 @@ app.use((err, req, res, next)=>{
     res.status(statusCode).render('error', {err})
 })
 
-app.listen(3000, ()=>{
+const port = process.env.PORT || 3000;
+app.listen(port, ()=>{
     console.log('Serving on port 3000')
 })
