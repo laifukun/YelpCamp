@@ -10,9 +10,12 @@ const methodOverride = require('method-override')
 const ejsMate = require('ejs-mate')
 
 const session = require('express-session')
+
+
 const flash = require('connect-flash')
 const ExpressError = require('./utils/ExpressError')
 
+const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp'
 const passport = require('passport');
 const passportLocal = require('passport-local')
 const User = require('./models/user')
@@ -20,15 +23,16 @@ const User = require('./models/user')
 const userRouter = require('./routes/users')
 const campgrounds = require('./routes/campgrounds')
 const reviews = require('./routes/reviews')
+const mongoSanitize = require('express-mongo-sanitize');
+const MongoDBStore = require("connect-mongo")
 
-
-mongoose.connect('mongodb://localhost:27017/yelp-camp', {
+mongoose.connect(dbUrl, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
     useFindAndModify: false
 });
-``
+
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", ()=>{
@@ -39,12 +43,31 @@ app.engine('ejs', ejsMate)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'))
 
-
 app.use(express.urlencoded({extended: true}))
 app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')))
+
+const secret = process.env.SECRET
+const store = new MongoDBStore({
+    mongoUrl: dbUrl,
+    secret,
+    touchAfter: 24*3600,
+});
+
+app.use(session({
+    secret,
+    store: store,
+  }));
+
+
+store.on("error", function(e){
+    console.log("Session store error", e);
+})
+
 const sessionConfig ={
-    secret: 'this',
+    store, 
+    name: 'session',
+    secret,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -54,6 +77,9 @@ const sessionConfig ={
     } 
 
 }
+
+
+app.use(mongoSanitize());
 app.use(session(sessionConfig))
 app.use(flash())
 app.use(passport.initialize());
